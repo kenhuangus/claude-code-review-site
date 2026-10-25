@@ -7,181 +7,203 @@
   <meta name="description" content="Engineering deep-dive into how Anthropic's Claude Code team reviews code at massive scale. Optimizing human attention, multi-agent consensus, 6 defense layers, and daily regression evals.">
   <meta name="author" content="Ken Huang, CISSP">
   
-  <!-- Preconnect and Google Fonts -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body class="deck-body theme-dark">
-  <!-- Progress Bar at Top -->
-  <div class="progress-bar-wrap">
-    <div class="progress-bar-fill" id="progress"></div>
-  </div>
-
   <!-- Top Global Bar -->
-  <header class="bar bar--top" role="banner">
-    <div class="bar__left">
-      <div class="bar__brand">
-        <span class="bar__brand-badge">ANTHROPIC DEV</span>
-        <span class="bar__brand-title" id="slideTitle">How the Claude Code Team Does Code Review</span>
+  <header class="bar">
+    <div class="bar__brand">
+      <span class="bar__logo">🤖</span>
+      <span>CLAUDE CODE REVIEW</span>
+    </div>
+    <div class="bar__title" id="slideTitle">How the Claude Code Team Does Code Review</div>
+    <div class="bar__actions">
+      <!-- Direct Navigation Shortcuts: [H], [M], [D], [T] -->
+      <button type="button" class="bar__btn" id="homeNavBtn" title="Go to Home Slide (Key: H)">
+        <kbd class="kbd-hint">H</kbd> <span data-i18n="ui.home">Home</span>
+      </button>
+      <button type="button" class="bar__btn" id="modsNavBtn" title="Jump to Module Architecture (Key: M)">
+        <kbd class="kbd-hint">M</kbd> <span data-i18n="ui.mods">Mods</span>
+      </button>
+      <button type="button" class="bar__btn" id="docsNavBtn" title="Claude Code Docs (Key: D)">
+        <kbd class="kbd-hint">D</kbd> <span data-i18n="ui.docs">Docs ↗</span>
+      </button>
+      <button type="button" class="bar__btn" id="termBtn" title="Terminal Simulator (Key: T)">
+        <kbd class="kbd-hint">T</kbd> <span data-i18n="ui.terminal">Terminal</span>
+      </button>
+      
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" class="lang__btn is-on" id="langBtnEn" data-lang="en">EN</button>
+        <button type="button" class="lang__btn" id="langBtnZh" data-lang="zh">中文</button>
       </div>
-    </div>
-    
-    <div class="bar__center">
-      <!-- Direct Jump Shortcuts [H] HOME, [M] MODS, [D] DOCS, [T] TERMINAL -->
-      <nav class="nav-shortcuts" aria-label="Quick Navigation">
-        <button class="nav-shortcut-btn" id="homeNavBtn" title="Go to Home Slide (Key: H)">
-          <kbd class="kbd-hint">H</kbd><span data-i18n="ui.home">Home</span>
-        </button>
-        <button class="nav-shortcut-btn" id="modsNavBtn" title="Jump to Module Architecture (Key: M)">
-          <kbd class="kbd-hint">M</kbd><span data-i18n="ui.mods">Modules</span>
-        </button>
-        <button class="nav-shortcut-btn" id="docsNavBtn" title="Open Claude Code Docs (Key: D)">
-          <kbd class="kbd-hint">D</kbd><span data-i18n="ui.docs">Docs ↗</span>
-        </button>
-        <button class="nav-shortcut-btn" id="termBtn" title="Toggle Terminal CLI Modal (Key: T)">
-          <kbd class="kbd-hint">T</kbd><span data-i18n="ui.terminal">Terminal</span>
-        </button>
-      </nav>
-    </div>
 
-    <div class="bar__right">
-      <!-- Slide Select Dropdown -->
-      <select class="slide-select" id="slideSelect" aria-label="Select Slide"></select>
-
-      <!-- Language Toggle -->
-      <button class="bar__btn bar__btn--lang" id="langBtn" aria-label="Toggle Language" title="Toggle English / Chinese">
-        EN | 中文
-      </button>
-
-      <!-- Theme Toggle -->
-      <button class="bar__btn" id="themeBtn" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">
-        🌓
-      </button>
-
-      <!-- Fullscreen Toggle -->
-      <button class="bar__btn" id="fsBtn" aria-label="Toggle Fullscreen" title="Full Screen (Key: F)">
-        <span class="bar__btn-icon">⛶</span>
+      <button type="button" class="bar__btn" id="fsBtn" aria-label="Toggle Fullscreen (F)" title="Toggle Fullscreen (F)">
         <span class="bar__btn-label" data-i18n="ui.fullscreen">Full Screen</span>
       </button>
-
-      <!-- GitHub Repo Link -->
-      <a href="https://github.com/kenhuangus/claude-code-review-site" class="bar__btn bar__btn--repo" target="_blank" rel="noopener noreferrer">
-        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style="display:inline-block; vertical-align:text-bottom; margin-right:4px;">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-        <span data-i18n="ui.repo">GitHub</span>
-      </a>
+      
+      <a href="https://github.com/kenhuangus/claude-code-review-site" target="_blank" rel="noopener" class="bar__cta bar__cta--alt" data-i18n="ui.repo">GitHub Repo ↗</a>
     </div>
   </header>
 
-  <!-- Slide Stage -->
-  <main class="deck-stage" id="deckStage" role="main">
+  <!-- Main Slide Deck Container -->
+  <main class="deck" id="deck">
 
     <!-- SLIDE 1: HERO / TITLE -->
     <section class="slide is-active slide--dark" id="s1" data-slide="1" data-title="How the Claude Code Team Does Code Review">
-      <div class="slide__in">
-        <div class="hero-split">
-          <div class="hero-main">
-            <span class="hero-eyebrow" data-i18n="hero.eyebrow">Engineering Deep Dive · Anthropic Team Architecture</span>
-            <h1 class="hero-title" data-i18n="hero.title">HOW THE CLAUDE CODE TEAM DOES CODE REVIEW</h1>
-            <p class="hero-lead" data-i18n="hero.sub">
-              How do you review code at the volume agents produce it? On the Claude Code team, once we had high coverage and deep reviews, we started optimizing for the minimum amount of human review time that doesn't raise reverts or incidents.
-            </p>
-            <div class="hero-byline" data-i18n="hero.authors">
-              Addy Osmani, Morgan Westlee Lunt, Qing Wang (Oct 15, 2026) · Presented by <strong>Ken Huang, CISSP</strong>
-            </div>
-            
-            <div class="hero-actions">
-              <button class="btn btn--primary" onclick="window.deckGo(1)" data-i18n="ui.start">Start Presentation ➔</button>
-              <a href="https://claude.dev/blog/solving-code-review-at-anthropic/" target="_blank" rel="noopener noreferrer" class="btn btn--secondary" data-i18n="ui.docs_cta">Original Article ↗</a>
-            </div>
-          </div>
-
-          <div class="hero-stats-panel">
-            <div class="stat-card">
-              <div class="stat-card__val" data-i18n="hero.stat1_val">90%</div>
-              <div class="stat-card__lbl" data-i18n="hero.stat1_lbl">Code Agent-Written</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__val" data-i18n="hero.stat2_val">30,000+</div>
-              <div class="stat-card__lbl" data-i18n="hero.stat2_lbl">Daily Landings (Monorepo)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__val" data-i18n="hero.stat3_val">2x+</div>
-              <div class="stat-card__lbl" data-i18n="hero.stat3_lbl">Merged PR Velocity</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__val" data-i18n="hero.stat4_val">-40%</div>
-              <div class="stat-card__lbl" data-i18n="hero.stat4_lbl">Revert Rate Reduction</div>
-            </div>
-          </div>
+      <div class="slide__in center">
+        <div class="hero__grid"></div>
+        <div class="eyebrow" data-i18n="hero.eyebrow">Engineering Deep Dive · Anthropic Team Architecture</div>
+        <h1 class="hero__title" data-i18n="hero.title">HOW THE CLAUDE CODE TEAM DOES CODE REVIEW</h1>
+        <div class="hero__acronym" data-i18n="hero.acronym" data-i18n-html="true">
+          <b>90%</b> Agent-Written · <b>30,000+</b> Daily Landings · <b>2x+</b> Velocity · <b>-40%</b> Reverts
+        </div>
+        <p class="hero__sub" data-i18n="hero.sub" data-i18n-html="true">
+          How do you review code at the volume agents produce it? Optimizing for the minimum human review time without raising reverts or incidents.
+        </p>
+        <div class="hero__presenter">
+          <p data-i18n="hero.authors" data-i18n-html="true">
+            Addy Osmani, Morgan Westlee Lunt, Qing Wang (Oct 15, 2026)<br/>
+            Presented by <strong>Ken Huang, CISSP</strong> · Adjunct Professor, University of San Francisco (USF)
+          </p>
+        </div>
+        <div class="hero__actions">
+          <a href="#2" class="bar__cta" data-i18n="ui.start">Start Presentation ➔</a>
+          <a href="https://claude.dev/blog/solving-code-review-at-anthropic/" target="_blank" rel="noopener noreferrer" class="bar__cta bar__cta--alt" data-i18n="ui.docs_cta">Original Article ↗</a>
         </div>
       </div>
     </section>
 
     <!-- SLIDE 2: PRESENTER & RESEARCHER PROFILE -->
-    <section class="slide" id="s2" data-slide="2" data-title="About the Presenter: Ken Huang, CISSP">
+    <section class="slide" id="s2" data-slide="2" data-title="About the Instructor: Ken Huang, CISSP">
       <div class="slide__in">
         <span class="kicker" data-i18n="about.kicker">Presenter & Researcher</span>
-        <h2 class="slide-h2" data-i18n="about.h2">Ken Huang, CISSP</h2>
-        
-        <div class="instructor-slide-grid">
-          <div class="instructor-left">
-            <div class="instructor-avatar-wrap">
-              <img src="assets/images/ken-head-shot.png" alt="Ken Huang, CISSP" class="instructor-avatar" />
-              <div class="instructor-badge">INSTRUCTOR</div>
-            </div>
-            <div class="instructor-creds">
-              <div class="cred-item" data-i18n="about.b1">🎓 Adjunct Professor, University of San Francisco (USF) · Author of 9 AI Books</div>
-              <div class="cred-item" data-i18n="about.b2">🛡️ CSA Fellow (MAESTRO, AICM) · OWASP AIVSS Project Lead · WAIC Expert</div>
-              <div class="cred-item" data-i18n="about.b3">🚀 CEO, DistributedApps.ai · Agentic Security & Multi-Agent Harness Architect</div>
-            </div>
+        <h2 class="h2" data-i18n="about.h2">Ken Huang, CISSP</h2>
+        <div id="slide-content-wrap" class="instructor-slide-grid">
+          <div class="instructor-info-col">
+            <svg viewBox="0 0 800 110" class="slide-svg">
+              <defs>
+                <clipPath id="headshot-circle">
+                  <circle cx="65" cy="55" r="32"></circle>
+                </clipPath>
+              </defs>
+              <rect x="15" y="6" width="770" height="98" rx="14" fill="#FAF9F5" stroke="#D97757" stroke-width="2.5"></rect>
+              <circle cx="65" cy="55" r="34" fill="#F5E6DF" stroke="#BD5D3A" stroke-width="2.5"></circle>
+              <image href="assets/images/ken-head-shot.png" x="31" y="21" width="68" height="68" clip-path="url(#headshot-circle)" preserveAspectRatio="xMidYMid slice"></image>
+              <text x="115" y="44" fill="#141413" font-family="Inter" font-size="16.5" font-weight="900">KEN HUANG, CISSP — INSTRUCTOR &amp; AI SAFETY RESEARCHER</text>
+              <text x="115" y="68" fill="#6B6B63" font-family="Inter" font-size="12" font-weight="600">Author, Harness Engineering &amp; MAESTRO | Adjunct Professor, University of San Francisco</text>
+              <text x="115" y="88" fill="#BD5D3A" font-family="Inter" font-size="11.5" font-weight="750">CSA Fellow &amp; Co-Chair | OWASP AIVSS Lead | AIUC-1 Consortium | Schmidt Sciences</text>
+            </svg>
+            <ul class="main-bullets dense-columns">
+              <li class="bullet-group"><div class="primary-bullet" data-i18n="about.b1">🎓 Adjunct Professor, USF · AI author (Cambridge, Springer, Wiley, Packt, CMP, PKUP)</div></li>
+              <li class="bullet-group"><div class="primary-bullet" data-i18n="about.b2">🛡️ CSA Fellow (MAESTRO, AICM) · OWASP AIVSS Project Lead · WAIC Expert</div></li>
+              <li class="bullet-group"><div class="primary-bullet" data-i18n="about.b3">🚀 CEO, DistributedApps.ai · Agentic Security &amp; Multi-Agent Harness Architect</div></li>
+            </ul>
           </div>
-
-          <div class="instructor-right">
-            <div class="books-section-title">AUTHOR OF 9 ADVANCED AI & CYBERSECURITY BOOKS</div>
-            <div class="book-gallery-grid">
-              <img src="assets/images/books/agentic-ai-cybersecurity.jpg" alt="Agentic AI in Cybersecurity" class="book-cover" />
-              <img src="assets/images/books/ai-agents-in-action.jpg" alt="AI Agents in Action" class="book-cover" />
-              <img src="assets/images/books/ai-engineering-design-patterns.jpg" alt="AI Engineering Design Patterns" class="book-cover" />
-              <img src="assets/images/books/ai-safety-primer.jpg" alt="AI Safety Primer" class="book-cover" />
-              <img src="assets/images/books/ai-trust-risk-security.jpg" alt="AI Trust Risk Security" class="book-cover" />
-              <img src="assets/images/books/applied-ai-for-cybersecurity.jpg" alt="Applied AI for Cybersecurity" class="book-cover" />
-              <img src="assets/images/books/demystifying-ai-safety.jpg" alt="Demystifying AI Safety" class="book-cover" />
-              <img src="assets/images/books/generative-ai-in-healthcare.jpg" alt="Generative AI in Healthcare" class="book-cover" />
-              <img src="assets/images/books/securing-generative-ai.jpg" alt="Securing Generative AI" class="book-cover" />
+          <div class="author-books-card">
+            <div class="author-books-header">
+              <span>📚 AI Books &amp; Academic Publications</span>
+              <a href="https://www.amazon.com/stores/author/B0D3J7L7GN" target="_blank" rel="noopener noreferrer">Amazon Author Page ➔</a>
             </div>
-
-            <!-- 6 Global Publisher Logos -->
-            <div class="publishers-section">
-              <div class="publishers-title" data-i18n="about.publishers_title">🏛️ Academic & Global Publishers</div>
-              <div class="publisher-logos-row">
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/cambridge_university_press.svg" alt="Cambridge University Press" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.cambridge">Cambridge UP</span>
+            <div class="books-pubs-stack">
+              <div class="books-gallery-grid">
+                <a href="https://www.amazon.com/dp/3031900251" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Agentic AI: Theories and Practices (Springer)">
+                  <img src="assets/images/books/springer_agentic_ai.jpg" alt="Agentic AI (Springer)" class="book-cover-img">
+                  <div class="book-item-title">Agentic AI</div>
+                  <div class="book-publisher-tag">SPRINGER</div>
+                </a>
+                <a href="https://www.amazon.com/dp/3031448839" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Beyond AI (Springer)">
+                  <img src="assets/images/books/springer_beyond_ai.jpg" alt="Beyond AI (Springer)" class="book-cover-img">
+                  <div class="book-item-title">Beyond AI</div>
+                  <div class="book-publisher-tag">SPRINGER</div>
+                </a>
+                <a href="https://www.amazon.com/dp/3031542517" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Generative AI Security (Springer)">
+                  <img src="assets/images/books/springer_generative_ai_security.jpg" alt="GenAI Security (Springer)" class="book-cover-img">
+                  <div class="book-item-title">GenAI Security</div>
+                  <div class="book-publisher-tag">SPRINGER</div>
+                </a>
+                <a href="https://www.amazon.com/dp/3031901002" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Securing AI Agents (Springer)">
+                  <img src="assets/images/books/springer_securing_ai_agents.jpg" alt="Securing AI Agents (Springer)" class="book-cover-img">
+                  <div class="book-item-title">Securing Agents</div>
+                  <div class="book-publisher-tag">SPRINGER</div>
+                </a>
+                <a href="https://www.amazon.com/dp/1009384467" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Web3 (Cambridge)">
+                  <img src="assets/images/books/cambridge_web3.jpg" alt="Web3 (Cambridge UP)" class="book-cover-img">
+                  <div class="book-item-title">Web3 &amp; Economy</div>
+                  <div class="book-publisher-tag">CAMBRIDGE</div>
+                </a>
+                <a href="https://www.amazon.com/dp/1394186524" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Blockchain and Web3 (Wiley)">
+                  <img src="assets/images/books/wiley_blockchain_web3.jpg" alt="Blockchain &amp; Web3 (Wiley)" class="book-cover-img">
+                  <div class="book-item-title">Blockchain Web3</div>
+                  <div class="book-publisher-tag">WILEY</div>
+                </a>
+                <a href="https://www.amazon.com/dp/B0HF3F86YM" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Harness Engineering (Packt)">
+                  <img src="assets/images/books/harness_engineering.jpg" alt="Harness Engineering" class="book-cover-img">
+                  <div class="book-item-title">Harness Eng.</div>
+                  <div class="book-publisher-tag">BEST SELLER</div>
+                </a>
+                <a href="https://www.amazon.com/dp/1807785017" target="_blank" rel="noopener noreferrer" class="book-item-card" title="OpenClaw AI in Production (Packt)">
+                  <img src="assets/images/books/openclaw_ai_in_production.jpg" alt="OpenClaw AI in Production" class="book-cover-img">
+                  <div class="book-item-title">OpenClaw AI</div>
+                  <div class="book-publisher-tag">PACKT</div>
+                </a>
+                <a href="https://www.amazon.com/dp/B0H8JW9XFN" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Engineering Agentic AI with Claude">
+                  <img src="assets/images/books/engineering_agentic_ai_claude.jpg" alt="Engineering Agentic AI with Claude" class="book-cover-img">
+                  <div class="book-item-title">Claude Agentic</div>
+                  <div class="book-publisher-tag">NEW RELEASE</div>
+                </a>
+                <a href="https://www.amazon.com/dp/3032336686" target="_blank" rel="noopener noreferrer" class="book-item-card" title="Humanoid Robots and Physical AI: Reshaping Work, Society, and Human Purpose (Springer)">
+                  <img src="assets/images/books/springer_humanoid_robots.jpg" alt="Humanoid Robots and Physical AI (Springer)" class="book-cover-img">
+                  <div class="book-item-title">Humanoid Robots</div>
+                  <div class="book-publisher-tag">SPRINGER</div>
+                </a>
+              </div>
+              <div class="publishers-section">
+                <div class="publishers-header">
+                  <span class="publishers-title" data-i18n="about.publishers_title">My books were published by Academic &amp; Global Publishers</span>
+                  <span class="publishers-sub" data-i18n="about.publishers_sub">Peer-Reviewed Books, Monographs &amp; Handbooks</span>
                 </div>
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/springer.svg" alt="Springer" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.springer">Springer</span>
-                </div>
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/wiley.svg" alt="Wiley" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.wiley">Wiley</span>
-                </div>
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/packt.svg" alt="Packt" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.packt">Packt</span>
-                </div>
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/china_machine_press.png" alt="China Machine Press" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.cmp">China Machine Press</span>
-                </div>
-                <div class="pub-logo-item">
-                  <img src="assets/images/publishers/beijing_university_press.svg" alt="Peking University Press" class="pub-logo-img" />
-                  <span class="pub-logo-name" data-i18n="pub.pkup">Peking University Press</span>
+                <div class="publishers-grid">
+                  <a href="https://www.cambridge.org/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="Cambridge University Press">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/cambridge_university_press.svg" alt="Cambridge University Press" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.cambridge">Cambridge UP</div>
+                  </a>
+                  <a href="https://link.springer.com/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="Springer (Springer Nature)">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/springer.svg" alt="Springer" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.springer">Springer</div>
+                  </a>
+                  <a href="https://www.wiley.com/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="Wiley">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/wiley.svg" alt="Wiley" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.wiley">Wiley</div>
+                  </a>
+                  <a href="https://www.packtpub.com/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="Packt Publishing">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/packt.svg" alt="Packt" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.packt">Packt</div>
+                  </a>
+                  <a href="http://www.cmpbook.com/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="China Machine Press (机械工业出版社)">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/china_machine_press.png?v=20261025b" alt="China Machine Press" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.cmp">China Machine Press</div>
+                  </a>
+                  <a href="https://www.pup.cn/" target="_blank" rel="noopener noreferrer" class="publisher-card" title="Beijing University Press (北京大学出版社)">
+                    <div class="publisher-logo-wrap">
+                      <img src="assets/images/publishers/beijing_university_press.svg" alt="Beijing University Press" class="publisher-logo-img">
+                    </div>
+                    <div class="publisher-tag" data-i18n="pub.pkup">Beijing Univ. Press</div>
+                  </a>
                 </div>
               </div>
             </div>
@@ -194,14 +216,14 @@
     <section class="slide slide--alt" id="s3" data-slide="3" data-title="Article Tree & 10 Core Modules">
       <div class="slide__in">
         <span class="kicker" data-i18n="s3.kicker">Navigation Architecture · [M] Modules</span>
-        <h2 class="slide-h2" data-i18n="s3.h2">Article Tree & 10 Core Modules</h2>
-        <p class="slide-lead" data-i18n="s3.lead">
+        <h2 class="h2" data-i18n="s3.h2">Article Tree & 10 Core Modules</h2>
+        <p class="lead" data-i18n="s3.lead">
           Structured exploration of Addy Osmani, Morgan Westlee Lunt, and Qing Wang's operational blueprint.
         </p>
 
         <div class="grid-2col">
           <div class="tree-box">
-            <div style="font-weight:700; color:#f2a365; margin-bottom:0.5rem;" data-i18n="s3.tree_hdr">OFFICIAL POST SECTION TREE</div>
+            <div style="font-weight:700; color:#f2a365; margin-bottom:0.4rem;" data-i18n="s3.tree_hdr">OFFICIAL POST SECTION TREE</div>
             <span class="tree-line">└Rethinking the purpose of code review</span>
             <span class="tree-line">└The scarce resource: human time and attention</span>
             <span class="tree-line">└The life of a change</span>
@@ -216,11 +238,11 @@
           </div>
 
           <div class="card card--accent">
-            <h3 style="font-size:1.05rem; margin-top:0; color:var(--ink);" data-i18n="s3.nav_title">Interactive Presentation Controls</h3>
-            <p style="font-size:0.82rem; line-height:1.5; color:var(--muted);" data-i18n="s3.nav_desc">
+            <h3 class="card-title" data-i18n="s3.nav_title">Interactive Presentation Controls</h3>
+            <p style="font-size:0.80rem; line-height:1.45; color:var(--muted);" data-i18n="s3.nav_desc">
               Use standard keyboard navigation or top navigation shortcuts:
             </p>
-            <ul style="font-size:0.80rem; line-height:1.6; padding-left:1.2rem; color:var(--muted);">
+            <ul style="font-size:0.78rem; line-height:1.55; padding-left:1.1rem; color:var(--muted); margin:0;">
               <li><kbd class="kbd-hint">H</kbd> <strong data-i18n="s3.nav_h">Jump to Slide 1 (Hero & Title)</strong></li>
               <li><kbd class="kbd-hint">M</kbd> <strong data-i18n="s3.nav_m">Jump to Slide 3 (Tree Architecture & Modules)</strong></li>
               <li><kbd class="kbd-hint">D</kbd> <strong data-i18n="s3.nav_d">Open Official Claude Code Documentation</strong></li>
@@ -236,8 +258,8 @@
     <section class="slide" id="s4" data-slide="4" data-title="Rethinking the Purpose of Code Review">
       <div class="slide__in">
         <span class="kicker" data-i18n="s4.kicker">Scale Inflection & Paradigms</span>
-        <h2 class="slide-h2" data-i18n="s4.h2">Rethinking the Purpose of Code Review</h2>
-        <p class="slide-lead" data-i18n="s4.lead">
+        <h2 class="h2" data-i18n="s4.h2">Rethinking the Purpose of Code Review</h2>
+        <p class="lead" data-i18n="s4.lead">
           Shifting from an end-of-road human gate to continuous, automated spellcheck while you write.
         </p>
 
@@ -254,7 +276,7 @@
 
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s4.card2_title">The Two Jobs of Code Review</h3>
-            <div style="background:rgba(217,119,87,0.08); padding:0.6rem 0.8rem; border-radius:6px; margin-bottom:0.6rem;">
+            <div style="background:rgba(217,119,87,0.08); padding:0.5rem 0.7rem; border-radius:6px; margin-bottom:0.5rem;">
               <strong style="color:var(--accent);" data-i18n="s4.job1">1. Find and fix issues before they ship (correctness & security)</strong><br>
               <strong style="color:var(--accent);" data-i18n="s4.job2">2. Build shared context and codebase understanding across the team</strong>
             </div>
@@ -270,39 +292,39 @@
     <section class="slide slide--alt" id="s5" data-slide="5" data-title="The Scarce Resource: Human Time & Attention">
       <div class="slide__in">
         <span class="kicker" data-i18n="s5.kicker">Attention Economics & Guardrails</span>
-        <h2 class="slide-h2" data-i18n="s5.h2">The Scarce Resource: Human Time and Attention</h2>
-        <p class="slide-lead" data-i18n="s5.lead">
+        <h2 class="h2" data-i18n="s5.h2">The Scarce Resource: Human Time and Attention</h2>
+        <p class="lead" data-i18n="s5.lead">
           Minimizing human review time while keeping production reverts and incidents flat.
         </p>
 
-        <div class="card" style="margin-bottom:0.75rem;">
-          <div style="font-weight:700; color:var(--accent); font-size:0.92rem;" data-i18n="s5.eq_title">The Dual-Side Review Cost Equation</div>
-          <div style="font-family:var(--font-mono); font-size:0.86rem; color:var(--ink); margin:0.25rem 0;" data-i18n="s5.eq_sub">
+        <div class="card" style="margin-bottom:0.6rem;">
+          <div style="font-weight:700; color:var(--accent); font-size:0.88rem;" data-i18n="s5.eq_title">The Dual-Side Review Cost Equation</div>
+          <div style="font-family:var(--code); font-size:0.82rem; color:var(--ink); margin:0.2rem 0;" data-i18n="s5.eq_sub">
             Total Human Cost = Time Spent Reviewing + Time Spent Fixing Broken Code
           </div>
-          <p style="font-size:0.78rem; color:var(--muted); margin:0;" data-i18n="s5.eq_desc">
+          <p style="font-size:0.75rem; color:var(--muted); margin:0;" data-i18n="s5.eq_desc">
             Cutting review time is counterproductive if bad code simply spills into emergency incident debugging. Automated checks must absorb routine defects.
           </p>
         </div>
 
         <div class="grid-3col">
           <div class="card">
-            <div style="font-size:1.25rem; font-weight:800; color:var(--accent);" data-i18n="s5.m1_val">Median / p95</div>
-            <div style="font-size:0.78rem; font-weight:700; color:var(--ink);" data-i18n="s5.m1_lbl">Human Approvals per PR</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--accent);" data-i18n="s5.m1_val">Median / p95</div>
+            <div style="font-size:0.75rem; font-weight:700; color:var(--ink);" data-i18n="s5.m1_lbl">Human Approvals per PR</div>
           </div>
           <div class="card">
-            <div style="font-size:1.25rem; font-weight:800; color:var(--accent);" data-i18n="s5.m2_val">Cognitive Load</div>
-            <div style="font-size:0.78rem; font-weight:700; color:var(--ink);" data-i18n="s5.m2_lbl">Human Comments per PR</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--accent);" data-i18n="s5.m2_val">Cognitive Load</div>
+            <div style="font-size:0.75rem; font-weight:700; color:var(--ink);" data-i18n="s5.m2_lbl">Human Comments per PR</div>
           </div>
           <div class="card">
-            <div style="font-size:1.25rem; font-weight:800; color:var(--accent);" data-i18n="s5.m3_val">Cycle Latency</div>
-            <div style="font-size:0.78rem; font-weight:700; color:var(--ink);" data-i18n="s5.m3_lbl">Wait Time on Humans</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--accent);" data-i18n="s5.m3_val">Cycle Latency</div>
+            <div style="font-size:0.75rem; font-weight:700; color:var(--ink);" data-i18n="s5.m3_lbl">Wait Time on Humans</div>
           </div>
         </div>
 
-        <div class="card card--accent" style="margin-top:0.75rem;">
-          <strong style="color:var(--ink); font-size:0.86rem;" data-i18n="s5.guard_title">The Revert & Incident Guardrail:</strong>
-          <span style="font-size:0.80rem; color:var(--muted);" data-i18n="s5.guard_desc">
+        <div class="card card--accent" style="margin-top:0.6rem;">
+          <strong style="color:var(--ink); font-size:0.82rem;" data-i18n="s5.guard_title">The Revert & Incident Guardrail:</strong>
+          <span style="font-size:0.76rem; color:var(--muted);" data-i18n="s5.guard_desc">
             If revert or incident rates tick upward, human time hasn't been saved—it has only been shifted to firefighters. Most PRs must merge with at most 1 human in the loop.
           </span>
         </div>
@@ -313,8 +335,8 @@
     <section class="slide" id="s6" data-slide="6" data-title="Essential Harness Terminology Explained">
       <div class="slide__in">
         <span class="kicker" data-i18n="s6.kicker">Core Glossary & Engineering Terms</span>
-        <h2 class="slide-h2" data-i18n="s6.h2">Essential Harness Terminology Explained</h2>
-        <p class="slide-lead" data-i18n="s6.lead">
+        <h2 class="h2" data-i18n="s6.h2">Essential Harness Terminology Explained</h2>
+        <p class="lead" data-i18n="s6.lead">
           Operational definitions of foundational mechanisms powering agentic continuous delivery.
         </p>
 
@@ -380,12 +402,12 @@
     <section class="slide slide--alt" id="s7" data-slide="7" data-title="The Life of a Change: Pipeline Overview (FIG A)">
       <div class="slide__in">
         <span class="kicker" data-i18n="s7.kicker">Architecture & Change Lifecycle</span>
-        <h2 class="slide-h2" data-i18n="s7.h2">The Life of a Change: Pipeline Overview (FIG A)</h2>
-        <p class="slide-lead" data-i18n="s7.lead">
+        <h2 class="h2" data-i18n="s7.h2">The Life of a Change: Pipeline Overview (FIG A)</h2>
+        <p class="lead" data-i18n="s7.lead">
           FIG A — Most of the path is automated; human attention is concentrated strictly where risk exists.
         </p>
 
-        <div class="card" style="padding:0.75rem 1rem;">
+        <div class="card" style="padding:0.6rem 0.8rem;">
           <svg class="pipeline-svg" viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="gAutomated" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -412,7 +434,7 @@
             <rect x="22" y="154" width="136" height="20" rx="4" fill="rgba(217,119,87,0.2)"/>
             <text x="90" y="168" fill="#f2a365" font-size="9" text-anchor="middle">Fresh Subagent Diff</text>
 
-            <path d="M 175 105 L 195 105" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 175 105 L 195 105" stroke="#64748b" stroke-width="2"/>
 
             <!-- Column 2: On Every PR -->
             <rect x="200" y="20" width="220" height="175" rx="8" fill="url(#gAutomated)" stroke="#334155" stroke-width="1.5"/>
@@ -459,42 +481,40 @@
     <section class="slide" id="s8" data-slide="8" data-title="Six Concentric Defense Tiers (FIG B)">
       <div class="slide__in">
         <span class="kicker" data-i18n="s8.kicker">Defense in Depth Architecture</span>
-        <h2 class="slide-h2" data-i18n="s8.h2">Layer by Layer: Six Concentric Defense Tiers (FIG B)</h2>
-        <p class="slide-lead" data-i18n="s8.lead">
+        <h2 class="h2" data-i18n="s8.h2">Layer by Layer: Six Concentric Defense Tiers (FIG B)</h2>
+        <p class="lead" data-i18n="s8.lead">
           FIG B — Six layers of checks with instant rollback underneath. Few bugs bypass all six.
         </p>
 
         <div class="grid-2col">
-          <div class="card" style="display:flex; align-items:center; justify-content:center;">
+          <div class="card" style="display:flex; align-items:center; justify-content:center; padding:0.5rem;">
             <svg class="defense-svg" viewBox="0 0 440 260" xmlns="http://www.w3.org/2000/svg">
-              <!-- Tier 1 -->
               <rect x="40" y="10" width="360" height="32" rx="4" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
               <text x="220" y="31" fill="#e2e8f0" font-size="10.5" font-weight="700" text-anchor="middle">1. Verification Before PR (Tests, Linter, Subagent)</text>
-              <!-- Tier 2 -->
+
               <rect x="55" y="48" width="330" height="32" rx="4" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
               <text x="220" y="69" fill="#fca5a5" font-size="10.5" font-weight="700" text-anchor="middle">2. Required CI (Red Blocks Merge)</text>
-              <!-- Tier 3 -->
+
               <rect x="70" y="86" width="300" height="32" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
               <text x="220" y="107" fill="#7dd3fc" font-size="10.5" font-weight="700" text-anchor="middle">3. AI Code Review (Consensus Voting)</text>
-              <!-- Tier 4 -->
+
               <rect x="85" y="124" width="270" height="32" rx="4" fill="#0f172a" stroke="#eab308" stroke-width="1.5"/>
               <text x="220" y="145" fill="#fef08a" font-size="10.5" font-weight="700" text-anchor="middle">4. Security Review (Mandatory Pass)</text>
-              <!-- Tier 5 -->
+
               <rect x="100" y="162" width="240" height="32" rx="4" fill="#431407" stroke="#f97316" stroke-width="1.5"/>
               <text x="220" y="183" fill="#fdba74" font-size="10.5" font-weight="700" text-anchor="middle">5. Human Approval (Risk-Scaled)</text>
-              <!-- Tier 6 -->
-              <rect x="115" y="200" width="210" height="30" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
-              <text x="220" y="220" fill="#86efac" font-size="10" font-weight="700" text-anchor="middle">6. Merge Queue + Feature Flags</text>
 
-              <!-- Bottom Rollback Foundation -->
+              <rect x="115" y="200" width="210" height="30" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
+              <text x="220" y="220" fill="#86efac" font-size="10.5" font-weight="700" text-anchor="middle">6. Merge Queue + Feature Flags</text>
+
               <path d="M 20 240 L 420 240" stroke="#d97757" stroke-width="4" stroke-dasharray="6,4"/>
               <text x="220" y="255" fill="#f2a365" font-size="10" font-weight="800" text-anchor="middle">SAFETY SUBSTRATE: FAST ROLLBACK &amp; ON-CALL NET</text>
             </svg>
           </div>
 
           <div class="card card--accent">
-            <h3 style="font-size:0.95rem; margin-top:0; color:var(--ink);">Defense in Depth Rationale</h3>
-            <ul style="font-size:0.80rem; line-height:1.55; color:var(--muted); padding-left:1.1rem; margin:0;">
+            <h3 class="card-title">Defense in Depth Rationale</h3>
+            <ul style="font-size:0.78rem; line-height:1.55; color:var(--muted); padding-left:1.1rem; margin:0;">
               <li data-i18n="s8.l1">1. Pre-PR Verification (Tests, build, simulator screenshots)</li>
               <li data-i18n="s8.l2">2. Required CI (Multi-platform compile, lint, unit tests)</li>
               <li data-i18n="s8.l3">3. AI Code Review (Parallel bug hunting, consensus verifier voting)</li>
@@ -502,7 +522,7 @@
               <li data-i18n="s8.l5">5. Human Approval (Risk-tiered signoff, prompter accountability)</li>
               <li data-i18n="s8.l6">6. Merge Queue & Flags (Serialized retest, employee canary rings)</li>
             </ul>
-            <div style="margin-top:0.6rem; padding:0.5rem; background:rgba(217,119,87,0.1); border-radius:4px; font-size:0.76rem; color:var(--ink);" data-i18n="s8.sub">
+            <div style="margin-top:0.5rem; padding:0.45rem; background:rgba(217,119,87,0.1); border-radius:4px; font-size:0.74rem; color:var(--ink);" data-i18n="s8.sub">
               Substrate Foundation: Fast Rollback & On-Call Rotation
             </div>
           </div>
@@ -514,13 +534,13 @@
     <section class="slide slide--alt" id="s9" data-slide="9" data-title="Layer 1: Pre-PR Verification & Contracts">
       <div class="slide__in">
         <span class="kicker" data-i18n="s9.kicker">Autonomous Pre-Flight Gates</span>
-        <h2 class="slide-h2" data-i18n="s9.h2">Layer 1: Pre-PR Verification & Contract Files</h2>
-        <p class="slide-lead" data-i18n="s9.lead">
+        <h2 class="h2" data-i18n="s9.h2">Layer 1: Pre-PR Verification & Contract Files</h2>
+        <p class="lead" data-i18n="s9.lead">
           Most code review happens before a pull request ever exists.
         </p>
 
-        <div class="card" style="margin-bottom:0.75rem; border-left:4px solid var(--accent);">
-          <blockquote style="margin:0; font-style:italic; font-size:0.82rem; color:var(--ink);" data-i18n="s9.b_quote">
+        <div class="card" style="margin-bottom:0.6rem; border-left:4px solid var(--accent);">
+          <blockquote style="margin:0; font-style:italic; font-size:0.80rem; color:var(--ink);" data-i18n="s9.b_quote">
             "Giving Claude a way to verify its work is probably the most important thing for good results. It makes the final result 2x to 3x better." — Boris Cherny, Creator of Claude Code
           </blockquote>
         </div>
@@ -546,24 +566,24 @@
     <section class="slide" id="s10" data-slide="10" data-title="Layer 2: Multi-Agent AI Review & Consensus">
       <div class="slide__in">
         <span class="kicker" data-i18n="s10.kicker">Multi-Agent Consensus & Bug Hunting</span>
-        <h2 class="slide-h2" data-i18n="s10.h2">Layer 2: Multi-Agent AI Review & Consensus Voting</h2>
-        <p class="slide-lead" data-i18n="s10.lead">
+        <h2 class="h2" data-i18n="s10.h2">Layer 2: Multi-Agent AI Review & Consensus Voting</h2>
+        <p class="lead" data-i18n="s10.lead">
           Parallel bug-hunting agents paired with independent voting verifiers eliminate review fatigue.
         </p>
 
         <div class="grid-2col">
           <div class="card">
-            <div style="font-size:1.8rem; font-weight:800; color:var(--accent);" data-i18n="s10.stat_val">16% ➔ 54%</div>
-            <div style="font-weight:700; color:var(--ink); font-size:0.86rem; margin-bottom:0.5rem;" data-i18n="s10.stat_lbl">Jump in Substantive PR Comments</div>
+            <div style="font-size:1.6rem; font-weight:800; color:var(--accent);" data-i18n="s10.stat_val">16% ➔ 54%</div>
+            <div style="font-weight:700; color:var(--ink); font-size:0.84rem; margin-bottom:0.4rem;" data-i18n="s10.stat_lbl">Jump in Substantive PR Comments</div>
             <p data-i18n="s10.p1_desc">Multiple agents explore the diff in parallel against repository history. A separate group of verifier agents votes on each proposed finding; only consensus items are posted.</p>
           </div>
 
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s10.p2_title">A/B-Tested Noise Suppression</h3>
             <p data-i18n="s10.p2_desc">Cosmetic style, speculative diagnostics, and trivial cleanup are discarded. Remaining findings are tagged as Important, Nit, or Pre-existing to avoid blaming the current author.</p>
-            <div style="margin-top:0.5rem; border-top:1px dashed var(--border); padding-top:0.4rem;">
-              <strong style="color:var(--accent); font-size:0.82rem;" data-i18n="s10.p3_title">Mandatory Thread Resolution:</strong>
-              <p style="margin:0.2rem 0 0 0; font-size:0.76rem;" data-i18n="s10.p3_desc">Every finding must be addressed—either fixed in code or closed with technical reasoning. Overnight agents frequently pick up and resolve open threads.</p>
+            <div style="margin-top:0.4rem; border-top:1px dashed var(--line); padding-top:0.35rem;">
+              <strong style="color:var(--accent); font-size:0.80rem;" data-i18n="s10.p3_title">Mandatory Thread Resolution:</strong>
+              <p style="margin:0.15rem 0 0 0; font-size:0.74rem;" data-i18n="s10.p3_desc">Every finding must be addressed—either fixed in code or closed with technical reasoning. Overnight agents frequently pick up and resolve open threads.</p>
             </div>
           </div>
         </div>
@@ -574,8 +594,8 @@
     <section class="slide slide--alt" id="s11" data-slide="11" data-title="Layers 3 & 4: Security Review & Required CI">
       <div class="slide__in">
         <span class="kicker" data-i18n="s11.kicker">Automated Security & Multi-Platform CI</span>
-        <h2 class="slide-h2" data-i18n="s11.h2">Layers 3 & 4: Security Review & Required CI Gates</h2>
-        <p class="slide-lead" data-i18n="s11.lead">
+        <h2 class="h2" data-i18n="s11.h2">Layers 3 & 4: Security Review & Required CI Gates</h2>
+        <p class="lead" data-i18n="s11.lead">
           Security gets a standalone automated pass, backed by multi-platform matrix CI.
         </p>
 
@@ -599,8 +619,8 @@
     <section class="slide" id="s12" data-slide="12" data-title="Layer 5: Risk-Based Human Approval Matrix">
       <div class="slide__in">
         <span class="kicker" data-i18n="s12.kicker">Human Escalation Matrix</span>
-        <h2 class="slide-h2" data-i18n="s12.h2">Layer 5: Risk-Based Human Approval Matrix</h2>
-        <p class="slide-lead" data-i18n="s12.lead">
+        <h2 class="h2" data-i18n="s12.h2">Layer 5: Risk-Based Human Approval Matrix</h2>
+        <p class="lead" data-i18n="s12.lead">
           The change sets the risk tier, not the author. Dual classifiers evaluate blast radius.
         </p>
 
@@ -631,7 +651,7 @@
           </tbody>
         </table>
 
-        <div class="card card--accent" style="margin-top:0.75rem; font-size:0.78rem; line-height:1.5;">
+        <div class="card card--accent" style="margin-top:0.6rem; font-size:0.76rem; line-height:1.45;">
           <div data-i18n="s12.rule1">• Dual Classifiers: Classifier 1 assigns tier; Classifier 2 checks if change needs human exception.</div>
           <div data-i18n="s12.rule2">• Trusted Author Whitelists: Only verified repository owners get lighter approval paths.</div>
           <div data-i18n="s12.rule3">• Commit Invalidation: Agent approvals NEVER replace humans. New commits invalidate prior signoffs.</div>
@@ -643,8 +663,8 @@
     <section class="slide slide--alt" id="s13" data-slide="13" data-title="Layer 6 & Rollback: Merge Queue & Flags">
       <div class="slide__in">
         <span class="kicker" data-i18n="s13.kicker">Deployment Safety & Blast Radius Control</span>
-        <h2 class="slide-h2" data-i18n="s13.h2">Layer 6 & Rollback: Merge Queue, Flags & Instant Rollback</h2>
-        <p class="slide-lead" data-i18n="s13.lead">
+        <h2 class="h2" data-i18n="s13.h2">Layer 6 & Rollback: Merge Queue, Flags & Instant Rollback</h2>
+        <p class="lead" data-i18n="s13.lead">
           Re-running checks on latest main prevents combined merge failures; flags isolate risk.
         </p>
 
@@ -652,14 +672,14 @@
           <div class="card">
             <h3 class="card-title" data-i18n="s13.mq_title">Merge Queue Retesting</h3>
             <p data-i18n="s13.mq_desc">Serializes pull requests and re-runs checks against the fresh tip of main, preventing semantic race conditions between concurrently passing PRs.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s13.flag_title">Internal Dogfooding via Feature Flags</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s13.flag_title">Internal Dogfooding via Feature Flags</h3>
             <p data-i18n="s13.flag_desc">New features deploy behind flags to Anthropic employees first. Heavy real-world internal usage exposes edge cases before public distribution.</p>
           </div>
 
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s13.canary_title">Staged Ring Releases</h3>
             <p data-i18n="s13.canary_desc">Builds ship to latest channel first while stable channel trails. Telemetry anomalies trigger instant flag shutoff without code redeploy.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s13.oncall_title">Weekly On-Call & Blameless Post-Mortems</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s13.oncall_title">Weekly On-Call & Blameless Post-Mortems</h3>
             <p data-i18n="s13.oncall_desc">On-call engineers monitor revert dashboards. Every incident triggers an inquiry: 'Which inspection layer should have caught this?'</p>
           </div>
         </div>
@@ -670,13 +690,13 @@
     <section class="slide" id="s14" data-slide="14" data-title="Making Reviewers Better: Incidents as Evals (FIG C)">
       <div class="slide__in">
         <span class="kicker" data-i18n="s14.kicker">Continuous Improvement & Regression Evals</span>
-        <h2 class="slide-h2" data-i18n="s14.h2">How We Make Reviewers Better: Incidents as Daily Evals (FIG C)</h2>
-        <p class="slide-lead" data-i18n="s14.lead">
+        <h2 class="h2" data-i18n="s14.h2">How We Make Reviewers Better: Incidents as Daily Evals (FIG C)</h2>
+        <p class="lead" data-i18n="s14.lead">
           FIG C — Incidents and reverts are immediately transformed into permanent regression benchmark tests.
         </p>
 
         <div class="grid-2col">
-          <div class="card" style="display:flex; align-items:center; justify-content:center;">
+          <div class="card" style="display:flex; align-items:center; justify-content:center; padding:0.5rem;">
             <svg class="eval-svg" viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg">
               <rect x="20" y="20" width="160" height="40" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
               <text x="100" y="38" fill="#fca5a5" font-size="9.5" font-weight="700" text-anchor="middle">Incident or Revert</text>
@@ -711,7 +731,7 @@
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s14.noise_title">Measuring Noise & Comment Outcomes</h3>
             <p data-i18n="s14.noise_desc">Every reviewer comment is tracked across 4 developer actions: (1) Fixed it, (2) Said it was wrong, (3) Intentional behavior, (4) Nit/didn't matter.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s14.clean_title">Benchmarking on Known-Clean PRs</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s14.clean_title">Benchmarking on Known-Clean PRs</h3>
             <p data-i18n="s14.clean_desc">The reviewer is regularly evaluated against historically clean PRs to measure false positives that would cause harmful churn. Priority: Catch real bugs first, cut rounds second.</p>
           </div>
         </div>
@@ -722,40 +742,40 @@
     <section class="slide slide--alt" id="s15" data-slide="15" data-title="Convergence Engineering & Anti-Ping-Pong (FIG D)">
       <div class="slide__in">
         <span class="kicker" data-i18n="s15.kicker">Loop Termination & Convergence</span>
-        <h2 class="slide-h2" data-i18n="s15.h2">Convergence Engineering & Anti-Ping-Pong Loops (FIG D)</h2>
-        <p class="slide-lead" data-i18n="s15.lead">
+        <h2 class="h2" data-i18n="s15.h2">Convergence Engineering & Anti-Ping-Pong Loops (FIG D)</h2>
+        <p class="lead" data-i18n="s15.lead">
           FIG D — Agent authors and agent reviewers can loop indefinitely without strict convergence protocols.
         </p>
 
         <div class="grid-2col">
           <div class="card">
-            <div style="font-weight:700; color:var(--accent); font-size:0.88rem; margin-bottom:0.3rem;" data-i18n="s15.anecdote_title">The 50-Round Runaway PR</div>
-            <p style="font-size:0.78rem; line-height:1.45; color:var(--muted); margin-bottom:0.6rem;" data-i18n="s15.anecdote_desc">
+            <div style="font-weight:700; color:var(--accent); font-size:0.86rem; margin-bottom:0.25rem;" data-i18n="s15.anecdote_title">The 50-Round Runaway PR</div>
+            <p style="font-size:0.76rem; line-height:1.42; color:var(--muted); margin-bottom:0.5rem;" data-i18n="s15.anecdote_desc">
               An agent author and reviewer went through >50 rounds overnight. Git blame revealed 59% of flags were pre-existing legacy code, not new bugs from the diff.
             </p>
 
-            <div style="font-size:0.76rem; line-height:1.4; color:var(--ink);">
+            <div style="font-size:0.74rem; line-height:1.38; color:var(--ink);">
               <div><strong style="color:var(--accent);" data-i18n="s15.r1_name">1. 3-Round Hard Cap:</strong> <span data-i18n="s15.r1_desc">After 3 rounds, review halts and asks author to step back and reconsider architecture.</span></div>
-              <div style="margin-top:0.25rem;"><strong style="color:var(--accent);" data-i18n="s15.r2_name">2. Diff-Only Passes:</strong> <span data-i18n="s15.r2_desc">Subsequent passes evaluate only newly modified hunks rather than re-scanning entire files.</span></div>
-              <div style="margin-top:0.25rem;"><strong style="color:var(--accent);" data-i18n="s15.r3_name">3. Class-of-Bug Flagging:</strong> <span data-i18n="s15.r3_desc">Flags the pattern so the author fixes all occurrences at once instead of line by line.</span></div>
-              <div style="margin-top:0.25rem;"><strong style="color:var(--accent);" data-i18n="s15.r4_name">4. No Repeat Flags:</strong> <span data-i18n="s15.r4_desc">Suppresses previously reported items. Nightly sweep agents handle legacy debt independently.</span></div>
+              <div style="margin-top:0.2rem;"><strong style="color:var(--accent);" data-i18n="s15.r2_name">2. Diff-Only Passes:</strong> <span data-i18n="s15.r2_desc">Subsequent passes evaluate only newly modified hunks rather than re-scanning entire files.</span></div>
+              <div style="margin-top:0.2rem;"><strong style="color:var(--accent);" data-i18n="s15.r3_name">3. Class-of-Bug Flagging:</strong> <span data-i18n="s15.r3_desc">Flags the pattern so the author fixes all occurrences at once instead of line by line.</span></div>
+              <div style="margin-top:0.2rem;"><strong style="color:var(--accent);" data-i18n="s15.r4_name">4. No Repeat Flags:</strong> <span data-i18n="s15.r4_desc">Suppresses previously reported items. Nightly sweep agents handle legacy debt independently.</span></div>
             </div>
           </div>
 
           <div class="card card--accent">
             <h3 class="card-title" style="margin-top:0;">FIG D Empirical Impact</h3>
-            <div style="display:flex; flex-direction:column; gap:0.65rem; margin-top:0.5rem;">
-              <div class="stat-card" style="padding:0.6rem;">
-                <div style="font-size:1.3rem; font-weight:800; color:var(--accent);" data-i18n="s15.stat1_val">65% ➔ 78%</div>
-                <div style="font-size:0.76rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat1_lbl">Pass in 1 Round</div>
+            <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.4rem;">
+              <div class="stat-card" style="padding:0.5rem;">
+                <div style="font-size:1.2rem; font-weight:800; color:var(--accent);" data-i18n="s15.stat1_val">65% ➔ 78%</div>
+                <div style="font-size:0.74rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat1_lbl">Pass in 1 Round</div>
               </div>
-              <div class="stat-card" style="padding:0.6rem;">
-                <div style="font-size:1.3rem; font-weight:800; color:#10b981;" data-i18n="s15.stat2_val">8.9% ➔ 1.5%</div>
-                <div style="font-size:0.76rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat2_lbl">Need ≥5 Rounds</div>
+              <div class="stat-card" style="padding:0.5rem;">
+                <div style="font-size:1.2rem; font-weight:800; color:#10b981;" data-i18n="s15.stat2_val">8.9% ➔ 1.5%</div>
+                <div style="font-size:0.74rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat2_lbl">Need ≥5 Rounds</div>
               </div>
-              <div class="stat-card" style="padding:0.6rem;">
-                <div style="font-size:1.3rem; font-weight:800; color:#38bdf8;" data-i18n="s15.stat3_val">2.08 ➔ 1.32</div>
-                <div style="font-size:0.76rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat3_lbl">Mean Rounds to Pass</div>
+              <div class="stat-card" style="padding:0.5rem;">
+                <div style="font-size:1.2rem; font-weight:800; color:#38bdf8;" data-i18n="s15.stat3_val">2.08 ➔ 1.32</div>
+                <div style="font-size:0.74rem; font-weight:700; color:var(--ink);" data-i18n="s15.stat3_lbl">Mean Rounds to Pass</div>
               </div>
             </div>
           </div>
@@ -767,8 +787,8 @@
     <section class="slide" id="s16" data-slide="16" data-title="Where Humans Stay in the Loop">
       <div class="slide__in">
         <span class="kicker" data-i18n="s16.kicker">Human Judgment & High-Leverage Scrutiny</span>
-        <h2 class="slide-h2" data-i18n="s16.h2">Where Humans Stay in the Loop</h2>
-        <p class="slide-lead" data-i18n="s16.lead">
+        <h2 class="h2" data-i18n="s16.h2">Where Humans Stay in the Loop</h2>
+        <p class="lead" data-i18n="s16.lead">
           Preserving senior engineering attention for high-leverage decisions only humans can make.
         </p>
 
@@ -776,18 +796,18 @@
           <div class="card">
             <h3 class="card-title" data-i18n="s16.h1_title">Direction, Taste & Scope</h3>
             <p data-i18n="s16.h1_desc">Deciding whether to build it at all. Asking 'Should we even do this?' stops over-engineering and keeps product scope focused.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s16.h2_title">High-Risk Code Scrutiny</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s16.h2_title">High-Risk Code Scrutiny</h3>
             <p data-i18n="s16.h2_desc">Dedicated human auditing for mission-critical surfaces: billing transactions, auto-updaters, and CI/CD deployment definitions.</p>
           </div>
 
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s16.h3_title">Architectural Precedents</h3>
             <p data-i18n="s16.h3_desc">Reviewing core design patterns that subsequent agents and engineers will copy as canonical implementation models.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s16.h4_title">Reading Empirical Evidence</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s16.h4_title">Reading Empirical Evidence</h3>
             <p data-i18n="s16.h4_desc">Scrutinizing test runner output, bash logs, simulator screenshots, and verification artifacts rather than guessing from diffs.</p>
-            <div style="margin-top:0.5rem; border-top:1px dashed var(--border); padding-top:0.35rem;">
-              <strong style="color:var(--accent); font-size:0.80rem;" data-i18n="s16.h5_title">Accountability & Outcome Ownership:</strong>
-              <span style="font-size:0.76rem; color:var(--muted);" data-i18n="s16.h5_desc">A specific human is on the hook for every change merged to production, regardless of whether Claude typed the code.</span>
+            <div style="margin-top:0.4rem; border-top:1px dashed var(--line); padding-top:0.3rem;">
+              <strong style="color:var(--accent); font-size:0.78rem;" data-i18n="s16.h5_title">Accountability & Outcome Ownership:</strong>
+              <span style="font-size:0.74rem; color:var(--muted);" data-i18n="s16.h5_desc">A specific human is on the hook for every change merged to production, regardless of whether Claude typed the code.</span>
             </div>
           </div>
         </div>
@@ -798,8 +818,8 @@
     <section class="slide slide--alt" id="s17" data-slide="17" data-title="Sharing Context Across the Team">
       <div class="slide__in">
         <span class="kicker" data-i18n="s17.kicker">Knowledge Distribution & Ambient Awareness</span>
-        <h2 class="slide-h2" data-i18n="s17.h2">Sharing Context Across the Team</h2>
-        <p class="slide-lead" data-i18n="s17.lead">
+        <h2 class="h2" data-i18n="s17.h2">Sharing Context Across the Team</h2>
+        <p class="lead" data-i18n="s17.lead">
           Replacing line-by-line reading with on-demand slice explainers and visual learning artifacts.
         </p>
 
@@ -807,14 +827,14 @@
           <div class="card">
             <h3 class="card-title" data-i18n="s17.c1_title">Dispelling the Monolithic Mental Model</h3>
             <p data-i18n="s17.c1_desc">In a 30,000-daily-change monorepo, nobody holds the entire codebase in their head—and attempting to do so is a waste of human bandwidth.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s17.c2_title">On-Demand Slice Explainers</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s17.c2_title">On-Demand Slice Explainers</h3>
             <p data-i18n="s17.c2_desc">When preparing to modify a subsystem, developers ask Claude to generate an explainer for that exact slice. It takes minutes and reflects today's code.</p>
           </div>
 
           <div class="card card--accent">
             <h3 class="card-title" data-i18n="s17.c3_title">Interactive Visual Artifacts</h3>
             <p data-i18n="s17.c3_desc">Claude compiles custom visual architecture diagrams and pedagogical artifacts tailored to each engineer's preferred mental model.</p>
-            <h3 class="card-title" style="margin-top:0.6rem;" data-i18n="s17.c4_title">Ambient Slack Awareness</h3>
+            <h3 class="card-title" style="margin-top:0.5rem;" data-i18n="s17.c4_title">Ambient Slack Awareness</h3>
             <p data-i18n="s17.c4_desc">Development defaults to public Slack channels where teammates observe pull requests, designs, and discussions in real time.</p>
           </div>
         </div>
@@ -825,8 +845,8 @@
     <section class="slide" id="s18" data-slide="18" data-title="'You Land It, You Own It': Safe Ownership">
       <div class="slide__in">
         <span class="kicker" data-i18n="s18.kicker">Ownership Norms & Safe Reversibility</span>
-        <h2 class="slide-h2" data-i18n="s18.h2">'You Land It, You Own It': Reversibility Without Blame</h2>
-        <p class="slide-lead" data-i18n="s18.lead">
+        <h2 class="h2" data-i18n="s18.h2">'You Land It, You Own It': Reversibility Without Blame</h2>
+        <p class="lead" data-i18n="s18.lead">
           The engineer directing the agent owns the outcome, supported by total operational reversibility.
         </p>
 
@@ -864,8 +884,8 @@
     <section class="slide slide--alt" id="s19" data-slide="19" data-title="When We Change Direction: Zero Sunk Cost">
       <div class="slide__in">
         <span class="kicker" data-i18n="s19.kicker">Pivot Velocity & Sunk Cost Elimination</span>
-        <h2 class="slide-h2" data-i18n="s19.h2">When We Change Direction: Zero Sunk Cost</h2>
-        <p class="slide-lead" data-i18n="s19.lead">
+        <h2 class="h2" data-i18n="s19.h2">When We Change Direction: Zero Sunk Cost</h2>
+        <p class="lead" data-i18n="s19.lead">
           Because agent-written code is cheap and fast to produce, teams pivot without emotional friction.
         </p>
 
@@ -901,18 +921,18 @@
     <section class="slide" id="s20" data-slide="20" data-title="Enterprise Adoption Playbook & Horizon">
       <div class="slide__in">
         <span class="kicker" data-i18n="s20.kicker">Implementation Roadmap & The Horizon</span>
-        <h2 class="slide-h2" data-i18n="s20.h2">Enterprise Adoption Playbook & Where This Is Going</h2>
-        <p class="slide-lead" data-i18n="s20.lead">
+        <h2 class="h2" data-i18n="s20.h2">Enterprise Adoption Playbook & Where This Is Going</h2>
+        <p class="lead" data-i18n="s20.lead">
           A 4-phase rollout blueprint, dynamic zero-human merge boundaries, and automated circuit breakers.
         </p>
 
         <div class="grid-2col">
           <div class="card">
-            <div style="font-size:0.78rem; line-height:1.45;">
+            <div style="font-size:0.76rem; line-height:1.42;">
               <div><strong style="color:var(--accent);" data-i18n="s20.ph1_title">Phase 1: Pre-PR Harness:</strong> <span data-i18n="s20.ph1_desc">Add verification commands to CLAUDE.md; author REVIEW.md failure definitions; run /code-review and /security-review locally.</span></div>
-              <div style="margin-top:0.35rem;"><strong style="color:var(--accent);" data-i18n="s20.ph2_title">Phase 2: PR Intelligence:</strong> <span data-i18n="s20.ph2_desc">Deploy AI Review & Security GitHub Actions; enforce thread resolution before merge; cap review rounds; tune noise filters.</span></div>
-              <div style="margin-top:0.35rem;"><strong style="color:var(--accent);" data-i18n="s20.ph3_title">Phase 3: Risk-Based Gates:</strong> <span data-i18n="s20.ph3_desc">Formalize dual-classifier risk tiers (Tier 0/1/2); enforce CODEOWNERS for auth/billing/CI; dismiss approvals on new commits.</span></div>
-              <div style="margin-top:0.35rem;"><strong style="color:var(--accent);" data-i18n="s20.ph4_title">Phase 4: Evals & Rollbacks:</strong> <span data-i18n="s20.ph4_desc">Turn past incidents into daily eval sets; implement merge queues & feature flags; track approvals vs. revert rate guardrails.</span></div>
+              <div style="margin-top:0.3rem;"><strong style="color:var(--accent);" data-i18n="s20.ph2_title">Phase 2: PR Intelligence:</strong> <span data-i18n="s20.ph2_desc">Deploy AI Review & Security GitHub Actions; enforce thread resolution before merge; cap review rounds; tune noise filters.</span></div>
+              <div style="margin-top:0.3rem;"><strong style="color:var(--accent);" data-i18n="s20.ph3_title">Phase 3: Risk-Based Gates:</strong> <span data-i18n="s20.ph3_desc">Formalize dual-classifier risk tiers (Tier 0/1/2); enforce CODEOWNERS for auth/billing/CI; dismiss approvals on new commits.</span></div>
+              <div style="margin-top:0.3rem;"><strong style="color:var(--accent);" data-i18n="s20.ph4_title">Phase 4: Evals & Rollbacks:</strong> <span data-i18n="s20.ph4_desc">Turn past incidents into daily eval sets; implement merge queues & feature flags; track approvals vs. revert rate guardrails.</span></div>
             </div>
           </div>
 
@@ -921,7 +941,7 @@
             <p data-i18n="s20.future_desc">
               Anthropic continues shifting low-risk paths toward zero-human merges while engineering automated circuit breakers. When reviews miss bugs, fixes are codified into CLAUDE.md and skills.
             </p>
-            <div style="margin-top:0.5rem; padding:0.45rem; background:rgba(217,119,87,0.12); border-radius:4px; font-size:0.75rem; color:var(--ink);">
+            <div style="margin-top:0.4rem; padding:0.4rem; background:rgba(217,119,87,0.12); border-radius:4px; font-size:0.73rem; color:var(--ink);">
               <strong>Community Call:</strong> What checks has your team automated vs. reserved for human scrutiny? Share your feedback with the Anthropic engineering community.
             </div>
           </div>
@@ -931,32 +951,19 @@
 
   </main>
 
-  <!-- Bottom Navigation Bar -->
-  <footer class="bar bar--bottom" role="contentinfo">
-    <div class="bar__left">
-      <button class="bar__btn" id="prevBtn" aria-label="Previous Slide">
-        <span class="bar__btn-icon">◀</span>
-        <span class="bar__btn-label">Prev</span>
-      </button>
-      <button class="bar__btn" id="nextBtn" aria-label="Next Slide">
-        <span class="bar__btn-label">Next</span>
-        <span class="bar__btn-icon">▶</span>
-      </button>
-      <span class="slide-count" id="count">1 / 20</span>
-    </div>
+  <!-- Bottom Navigation Bar Matching Template -->
+  <nav class="ctrl" aria-label="Slide Controls">
+    <button type="button" class="ctrl__btn" id="prevBtn" aria-label="Previous Slide">‹ Prev</button>
+    <div class="dots" id="dots" role="tablist"></div>
+    <span class="ctrl__count" id="count">1 / 20</span>
+    <button type="button" class="ctrl__btn ctrl__btn--accent" id="nextBtn" aria-label="Next Slide">Next ›</button>
+  </nav>
 
-    <div class="bar__center">
-      <div class="dots-wrap" id="dots" role="tablist" aria-label="Slide Dots Navigation"></div>
-    </div>
-
-    <div class="bar__right">
-      <span class="nav-hint">Keys: <kbd>←</kbd><kbd>→</kbd> <kbd>H</kbd> <kbd>M</kbd> <kbd>D</kbd> <kbd>T</kbd> <kbd>F</kbd></span>
-    </div>
-  </footer>
+  <div class="progress" id="progress"></div>
 
   <!-- Terminal Simulator Modal -->
-  <div class="term-modal-backdrop" id="terminalModal" role="dialog" aria-modal="true" aria-label="Claude Code Terminal Simulator">
-    <div class="term-modal-card">
+  <div class="terminal-modal" id="terminalModal" role="dialog" aria-modal="true" aria-label="Claude Code Terminal Simulator">
+    <div class="terminal-card">
       <div class="term-header">
         <div class="term-dots">
           <span class="term-dot term-dot--red"></span>
@@ -964,7 +971,7 @@
           <span class="term-dot term-dot--green"></span>
         </div>
         <div class="term-title">claude-code — session@anthropic:~/claude-code</div>
-        <button class="term-close-btn" id="closeTermBtn" aria-label="Close Terminal">✕</button>
+        <button class="term-close" id="closeTermBtn" aria-label="Close Terminal">✕</button>
       </div>
 
       <div class="term-body" id="termBody">
@@ -986,10 +993,10 @@
         <div class="term-line"><span class="term-pass">Required Approvals:</span> <strong>2 Human Engineers Required</strong> (CODEOWNERS enforced)</div>
       </div>
 
-      <div class="term-footer">
-        <div class="term-input-wrap">
-          <span class="term-prompt">claude&gt;</span>
-          <input type="text" class="term-input" id="termInput" placeholder="Try 'help', '/code-review', '/security-review', 'cat CLAUDE.md', 'cat REVIEW.md'" />
+      <div class="term-footer" style="padding:0.6rem 1rem; background:#1a202c; border-top:1px solid #2d3748;">
+        <div class="term-input-wrap" style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="term-prompt" style="color:#d97757; font-weight:700;">claude&gt;</span>
+          <input type="text" class="term-input" id="termInput" placeholder="Try 'help', '/code-review', '/security-review', 'cat CLAUDE.md', 'cat REVIEW.md'" style="flex:1; background:#0f141c; border:1px solid #4a5568; border-radius:4px; padding:0.35rem 0.6rem; color:#fff; font-family:monospace; font-size:0.82rem;" />
         </div>
       </div>
     </div>

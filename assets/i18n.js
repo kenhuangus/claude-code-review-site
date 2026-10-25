@@ -40,6 +40,7 @@ window.CLAUDE_REVIEW_I18N = (function () {
 
       "hero.eyebrow": "Engineering Deep Dive · Anthropic Team Architecture",
       "hero.title": "HOW THE CLAUDE CODE TEAM DOES CODE REVIEW",
+      "hero.acronym": "<b>90%</b> Agent-Written · <b>30,000+</b> Daily Landings · <b>2x+</b> Velocity · <b>-40%</b> Reverts",
       "hero.sub": "How do you review code at the volume agents produce it? Optimizing for the minimum human review time without raising reverts or incidents.",
       "hero.authors": "Addy Osmani, Morgan Westlee Lunt, Qing Wang (Oct 15, 2026) · Presented by <strong>Ken Huang, CISSP</strong>",
       "hero.stat1_val": "90%",
@@ -341,6 +342,7 @@ window.CLAUDE_REVIEW_I18N = (function () {
 
       "hero.eyebrow": "工程深度解析 · Anthropic 团队核心架构",
       "hero.title": "CLAUDE CODE 团队如何进行代码审查",
+      "hero.acronym": "<b>90%</b> Agent编写 · <b>30,000+</b> 日均合并 · <b>2x+</b> 吞吐提速 · <b>-40%</b> 回滚降低",
       "hero.sub": "当智能体以惊人规模产出代码时，如何进行高效审查？在不增加回滚与事故的前提下，最小化人类审查精力消耗。",
       "hero.authors": "Addy Osmani, Morgan Westlee Lunt, Qing Wang (2026年10月15日) · 主讲人：<strong>黄健 (Ken Huang), CISSP</strong>",
       "hero.stat1_val": "90%",
@@ -635,6 +637,11 @@ window.CLAUDE_REVIEW_I18N = (function () {
   function apply() {
     const lang = curLang;
     document.documentElement.lang = lang;
+    // Update lang button state
+    document.querySelectorAll(".lang__btn").forEach(b => {
+      b.classList.toggle("is-on", b.dataset.lang === lang);
+    });
+
     const btn = document.getElementById("langBtn");
     if (btn) {
       btn.textContent = lang === "en" ? "EN | 中文" : "中文 | EN";
@@ -662,11 +669,20 @@ window.CLAUDE_REVIEW_I18N = (function () {
     }
   }
 
-  // Auto-init on DOMContentLoaded or immediately if loaded
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", apply);
-  } else {
+  // Wire buttons and auto-init
+  function initHandlers() {
+    document.querySelectorAll(".lang__btn").forEach(b => {
+      b.addEventListener("click", () => {
+        setLang(b.dataset.lang);
+      });
+    });
     apply();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initHandlers);
+  } else {
+    initHandlers();
   }
 
   return {
